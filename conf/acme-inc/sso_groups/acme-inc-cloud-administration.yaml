@@ -1,0 +1,7 @@
+sso_group_name: 
+  acme-inc-cloud-administration
+  
+description:
+  The Foundational Team with unrestricted permissions.
+  Should be restricted to one or two people. 
+  All others must work with dedicated roles and permission boundaries.

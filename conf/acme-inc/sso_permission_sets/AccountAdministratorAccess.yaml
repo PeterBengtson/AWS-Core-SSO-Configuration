@@ -1,0 +1,22 @@
+permission_set_name: 
+  AccountAdministratorAccess
+  
+description: 
+  Users with this permission set can create, modify, and delete user accounts in the 
+  AFT-Management account using AFT and its repos, manage SSO groups and add and remove 
+  users from them, plus use the AFT state machines.
+
+session_duration: PT8H
+
+permissions_boundary: null
+
+aws_managed_policies:
+  - AWSCodeBuildReadOnlyAccess
+  - AWSCodeCommitPowerUser
+  - AWSCodePipelineReadOnlyAccess
+  - AWSSSOMemberAccountAdministrator
+  - AWSStepFunctionsConsoleFullAccess
+  - ViewOnlyAccess
+
+inline_policy: null
+

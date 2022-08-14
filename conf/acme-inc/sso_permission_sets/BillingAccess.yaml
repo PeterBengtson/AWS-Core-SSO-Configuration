@@ -1,0 +1,16 @@
+permission_set_name: 
+  BillingAccess
+  
+description: 
+  Members of this group can manage AWS billing, payment, budgeting, 
+  and cost reporting in the AWS Organisation account.
+
+session_duration: PT2H
+
+permissions_boundary: null
+
+aws_managed_policies:
+  - Billing
+
+inline_policy: null
+

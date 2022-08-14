@@ -1,0 +1,14 @@
+account_id: "222222222222"
+
+sso_groups:
+  AWSControlTowerAdmins:
+    - AWSAdministratorAccess
+  AWSLogArchiveAdmins:
+    - AWSAdministratorAccess
+  AWSLogArchiveViewers:
+    - AWSReadOnlyAccess
+  AWSSecurityAuditPowerUsers:
+    - AWSPowerUserAccess
+  AWSSecurityAuditors:
+    - AWSReadOnlyAccess
+

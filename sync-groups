@@ -1,0 +1,54 @@
+#!/bin/zsh -e
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+ENDCOLOR="\e[0m"
+
+if [ -v $AWS_ACCESS_KEY_ID ] ; then
+    echo -e "${RED}ERROR: Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID and AWS_SESSION_TOKEN from the SSO temporary credentials popup screen.${ENDCOLOR}"
+    exit 1
+fi
+
+if [ -z "$1" ] ; then
+    echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
+    exit 1
+else
+    prefix="conf/$1/"
+    if ! [ -d $prefix ] ; then
+        echo -e "${RED}ERROR: The directory $prefix doesn't exist${ENDCOLOR}"
+        exit 1
+    fi
+fi
+
+instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
+
+get_group_id() {
+    local group_id=$(aws identitystore list-groups --identity-store-id $identity_store_id \
+                --filters "[{\"AttributePath\": \"DisplayName\", \"AttributeValue\": \"$1\"}]" \
+                --query 'Groups[0].GroupId' --output text)
+    echo $group_id
+}
+
+for FILE in ${prefix}sso_groups/*.yaml
+do 
+    echo
+    echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
+    echo -e "${YELLOW}    $FILE:${ENDCOLOR}"
+    echo -e "${GREEN}----------------------------------------------------------------------------------------------------${ENDCOLOR}"
+    echo
+    json=$(cat $FILE | yq .)
+    sso_group_name=$(echo $json | jq -r .sso_group_name)
+    description=$(echo $json | jq -r .description)
+    group_id=$(get_group_id $sso_group_name)
+    if [[ "$group_id" == "None" ]] ; then
+        echo -e "${RED}The SSO group ${YELLOW}$sso_group_name${RED} does not exist.${ENDCOLOR}"
+        echo "${RED}Until there is an API for creating SSO Groups, you must create it manually using the following data:${ENDCOLOR}"
+        echo 
+        echo $json | jq  . | yq -y
+    else
+        echo -e ${GREEN}The SSO group ${YELLOW}$sso_group_name${GREEN} exists.${ENDCOLOR}
+    fi
+done
+echo
+

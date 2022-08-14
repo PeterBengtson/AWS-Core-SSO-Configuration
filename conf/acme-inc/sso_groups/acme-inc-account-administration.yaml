@@ -1,0 +1,8 @@
+sso_group_name: 
+  acme-inc-account-administration
+
+description:
+  Members of this group can create, modify, and delete user accounts using AFT 
+  and its repos, manage SSO groups and add and remove users from them, plus use 
+  the AFT state machines. They also have admin access to Service Catalog in the 
+  organisation account.

@@ -1,0 +1,108 @@
+permission_set_name: 
+  DeveloperAccess
+  
+description: 
+  A permission set for builders/developers. It includes read-only 
+  permissions for almost everything a developer would need, plus mutation rights for 
+  things that AWS Copilot might deploy or access. This permission set will need to 
+  be updated as developer needs change; any changes here should also be reflected 
+  in the Boundary Permissions used, such as developer-permission-boundary-policy. 
+  Developers are regionally restricted to eu-north-1, Stockholm.
+
+session_duration: PT8H
+
+permissions_boundary: developer-permission-boundary-policy
+
+aws_managed_policies:
+    - ViewOnlyAccess
+
+inline_policy:
+    Version: '2012-10-17'
+    Statement:
+        - 
+            Sid: AllowGlobalServices
+            Effect: Allow
+            Resource: "*"
+            Action:
+                - access-analyzer:*
+                - aws-portal:ViewBilling
+                - budgets:ViewBudget
+                - ce:Get*
+                - ce:List*
+                - cloudfront:*
+                - cur:Describe*
+                - health:Describe*
+                - iam:*
+                - route53:*
+                - route53domains:*
+                - support:*
+        - 
+            Sid: AllowStsInStockholm
+            Effect: Allow
+            Resource: "*"
+            Condition:
+                StringEquals:
+                    aws:RequestedRegion: eu-north-1
+            Action:
+                - sts:AssumeRole
+        - 
+            Sid: AllowLocalServicesInStockholm
+            Effect: Allow
+            Resource: "*"
+            Condition:
+                StringEquals:
+                    aws:RequestedRegion: eu-north-1
+            Action:
+                - acm:*
+                - apigateway:*
+                - application-autoscaling:*
+                - appmesh:*
+                - autoscaling:*
+                - cloudformation:*
+                - cloudtrail:*
+                - cloudwatch:*
+                - codebuild:*
+                - codecommit:*
+                - codedeploy:*
+                - codepipeline:*
+                - codestar:*
+                - config:*
+                - datapipeline:*
+                - dax:*
+                - ds:*
+                - dynamodb:*
+                - ec2:*
+                - ec2messages:*
+                - ecr:*
+                - ecs:*
+                - elasticache:*
+                - elasticbeanstalk:*
+                - elasticfilesystem:*
+                - elasticloadbalancing:*
+                - events:*
+                - firehose:*
+                - fsx:*
+                - glacier:*
+                - inspector:*
+                - kinesis:*
+                - kms:*
+                - lambda:*
+                - logs:*
+                - organizations:Describe*
+                - organizations:List*
+                - outposts:*
+                - pi:*
+                - rds:*
+                - resource-groups:*
+                - s3-object-lambda:*
+                - s3:*
+                - secretsmanager:*
+                - servicediscovery:*
+                - sns:*
+                - sqs:*
+                - ssm:*
+                - ssmmessages:*
+                - states:*
+                - tag:*
+                - xray:*
+

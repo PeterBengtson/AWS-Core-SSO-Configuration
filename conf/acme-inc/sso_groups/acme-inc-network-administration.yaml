@@ -1,0 +1,6 @@
+sso_group_name: 
+  acme-inc-network-administration
+  
+description:
+  Members of this group can set up and manage network-related tasks, 
+  including Route53 DNS configuration and cross-account ENIs.

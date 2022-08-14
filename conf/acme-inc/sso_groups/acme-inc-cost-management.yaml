@@ -1,0 +1,6 @@
+sso_group_name: 
+  acme-inc-cost-management
+  
+description:
+  Members of this group can manage AWS billing, payment, budgeting, and cost reporting 
+  in the AWS Organisation account.

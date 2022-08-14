@@ -1,0 +1,175 @@
+#!/bin/zsh -e
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+ENDCOLOR="\e[0m"
+
+if [ -v $AWS_ACCESS_KEY_ID ] ; then
+    echo -e "${RED}ERROR: Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID and AWS_SESSION_TOKEN from the SSO temporary credentials popup screen.${ENDCOLOR}"
+    exit 1
+fi
+
+if [ -z "$1" ] ; then
+    echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
+    exit 1
+else
+    prefix="conf/$1/"
+    if ! [ -d $prefix ] ; then
+        echo -e "${RED}ERROR: The directory $prefix doesn't exist${ENDCOLOR}"
+        exit 1
+    fi
+fi
+
+instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
+identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
+
+get_group_id() {
+    local group_id=$(aws identitystore list-groups --identity-store-id $identity_store_id \
+                --filters "[{\"AttributePath\": \"DisplayName\", \"AttributeValue\": \"$1\"}]" \
+                --query 'Groups[0].GroupId' --output text)
+    echo $group_id
+}
+
+get_group_name() {
+    local group_name=$(aws identitystore describe-group --identity-store-id $identity_store_id --group-id $1 \
+                         --query 'DisplayName' --output text)
+    echo $group_name
+}
+
+get_permission_set_name() {
+    local permission_set_name=$(aws sso-admin describe-permission-set --instance-arn $instance_arn --permission-set-arn $1 \
+                                  --query 'PermissionSet.Name' --output text)
+    echo $permission_set_name
+}
+
+echo
+echo -e ${YELLOW}Retrieving permission sets...${ENDCOLOR}
+permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text)
+# SSO_INSTANCE_PERMISSION_SET_ARNS maps from names to ARNs
+declare -A SSO_INSTANCE_PERMISSION_SET_ARNS=()     
+for permission_set_arn in $(echo $permission_set_arns)
+do
+    permission_set_name=$(get_permission_set_name $permission_set_arn)
+    SSO_INSTANCE_PERMISSION_SET_ARNS[$permission_set_name]="$permission_set_arn"
+done
+
+get_permission_set_arn() {
+    echo $SSO_INSTANCE_PERMISSION_SET_ARNS[$1]
+}
+
+get_account_assignments() {
+    #set -x
+    local sso_groups='{}'
+    local sso_users='{}'   # Not populated - SSO User assignments not supported yet
+
+    for pm_set_arn pm_set_name in ${(kv)ACCOUNT_PERMISSION_SET_NAMES}; do
+        local account_assignments=$(aws sso-admin list-account-assignments --instance-arn $instance_arn --account-id $1 \
+                                        --permission-set-arn $pm_set_arn --query 'AccountAssignments' | jq -cr .)
+        for account_assignment in $(echo $account_assignments | jq -rc '.[]'); do
+            local principal_type=$(echo $account_assignment | jq -r '.PrincipalType')
+            if [[ "$principal_type" == "GROUP" ]] ; then
+                local principal_id=$(echo $account_assignment | jq -r '.PrincipalId')
+                local group_name=$(get_group_name $principal_id)
+                local group_list=$(echo $sso_groups | jq -c --arg group_name $group_name '.[$group_name]')
+                if [[ "$group_list" == "null" ]] ; then
+                    sso_groups=$(echo $sso_groups | jq -c --arg group_name $group_name '.[$group_name] |= []')
+                fi
+                sso_groups=$(echo $sso_groups | jq -c --arg group_name $group_name --arg pm_set_name $pm_set_name '.[$group_name] += [$pm_set_name]')
+            fi
+        done
+    done
+
+    echo "{\"sso_groups\":$sso_groups,\"sso_users\":$sso_users}"
+}
+
+
+for FILE in ${prefix}accounts/*.yaml
+do 
+    echo
+    echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
+    echo -e "${YELLOW}    $FILE:${ENDCOLOR}"
+    echo -e "${GREEN}----------------------------------------------------------------------------------------------------${ENDCOLOR}"
+    echo
+    json=$(cat $FILE | yq .)
+    account_id=$(echo $json | jq -r .account_id)
+    sso_groups=$(echo $json | jq -c .sso_groups)
+
+    echo -e "Account ${YELLOW}$account_id${ENDCOLOR}"
+
+    # account_permission_set_arns lists ARNs
+    account_permission_set_arns=$(aws sso-admin list-permission-sets-provisioned-to-account --instance-arn $instance_arn --account-id "$account_id" \
+                                      | jq -cr '.PermissionSets')
+    # ACCOUNT_PERMISSION_SET_NAMES maps from ARNs to names
+    declare -A ACCOUNT_PERMISSION_SET_NAMES=()      
+    for account_permission_set_arn in $(echo $account_permission_set_arns | jq -rc '.[]')
+    do
+        account_permission_set_name=$(get_permission_set_name $account_permission_set_arn)
+        ACCOUNT_PERMISSION_SET_NAMES[$account_permission_set_arn]="$account_permission_set_name"
+    done
+    # accounts_assignments is structured in the same way as an account/*.yaml file, allowing for set operations
+    account_assignments=$(get_account_assignments $account_id $ACCOUNT_PERMISSION_SET_NAMES)
+
+    # First assign everything in $sso_groups, the goal state
+    sso_group_names=$(echo $sso_groups | jq -cr '. | keys')
+    for sso_group_name in $(echo $sso_group_names | jq -cr '.[]')
+    do
+        permission_sets=$(echo $sso_groups | jq -c --arg name $sso_group_name '.[$name]')
+        for permission_set_name in $(echo $permission_sets | jq -cr '.[]')
+        do
+            desired_permission_sets=$(echo $sso_groups | jq -c --arg group_name $sso_group_name '.[$group_name]')
+            already_exists=$(echo $account_assignments | jq -c --arg group_name $sso_group_name --arg set_name $permission_set_name \
+                                  '.sso_groups[$group_name] | index($set_name)')
+            if [[ ! "$already_exists" == 'null' ]] ; then
+                continue
+            fi
+            echo -e "${GREEN}Assigning $sso_group_name with $permission_set_name${ENDCOLOR}..."
+            group_id=$(get_group_id $sso_group_name)
+            if [ -z "$group_id" ] ; then
+                echo -e "${RED}ERROR: The SSO Group $1 can't be found. Aborting.${ENDCOLOR}"
+                exit 1
+            fi
+            permission_set_arn=$(get_permission_set_arn $permission_set_name)
+            if [ -z "$permission_set_arn" ] ; then
+                echo -e "${RED}ERROR: The SSO Permission Set $1 can't be found. Aborting.${ENDCOLOR}"
+                exit 1
+            fi
+            aws sso-admin create-account-assignment --instance-arn $instance_arn \
+              --target-type AWS_ACCOUNT --target-id $account_id \
+              --principal-type GROUP --principal-id $group_id \
+              --permission-set-arn $permission_set_arn
+            echo
+        done
+    done
+
+    # Now remove everything not in $sso_groups, the goal state
+    sso_group_names=$(echo $account_assignments | jq -cr '.sso_groups | keys')
+    for sso_group_name in $(echo $sso_group_names | jq -cr '.[]')
+    do
+        permission_sets=$(echo $account_assignments | jq -c --arg group_name $sso_group_name '.sso_groups[$group_name]')
+        for permission_set_name in $(echo $permission_sets | jq -cr '.[]')
+        do
+            desired_permission_sets=$(echo $sso_groups | jq -c --arg group_name $sso_group_name '.[$group_name]')
+            is_wanted=$(echo $desired_permission_sets | jq -c --arg set_name $permission_set_name '. | index($set_name)')
+            if [[ ! "$is_wanted" == 'null' ]] ; then
+                echo -e "${YELLOW}Keeping $sso_group_name with $permission_set_name${ENDCOLOR}"
+                continue
+            fi
+            echo -e "${RED}Deassigning $sso_group_name with $permission_set_name${ENDCOLOR}..."
+            group_id=$(get_group_id $sso_group_name)
+            if [ -z "$group_id" ] ; then
+                echo -e "${RED}ERROR: The SSO Group $1 can't be found. Aborting.${ENDCOLOR}"
+                exit 1
+            fi
+            permission_set_arn=$(get_permission_set_arn $permission_set_name)
+            if [ -z "$permission_set_arn" ] ; then
+                echo -e "${RED}ERROR: The SSO Permission Set $1 can't be found. Aborting.${ENDCOLOR}"
+                exit 1
+            fi
+            aws sso-admin delete-account-assignment --instance-arn $instance_arn \
+              --target-type AWS_ACCOUNT --target-id $account_id \
+              --principal-type GROUP --principal-id $group_id \
+              --permission-set-arn $permission_set_arn
+            echo
+        done
+    done
+done

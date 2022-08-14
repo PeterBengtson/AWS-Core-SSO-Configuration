@@ -1,0 +1,11 @@
+account_id: "111111111111"
+
+sso_groups:
+  AWSAuditAccountAdmins:
+    - AWSAdministratorAccess
+  AWSControlTowerAdmins:
+    - AWSAdministratorAccess
+  AWSSecurityAuditPowerUsers:
+    - AWSPowerUserAccess
+  AWSSecurityAuditors:
+    - AWSReadOnlyAccess

@@ -1,0 +1,19 @@
+permission_set_name: 
+  NetworkAdministratorAccess
+  
+description: 
+  Grants full access permissions to AWS services and actions required to set up and 
+  configure AWS network resources, including full access to Route53.
+
+session_duration: PT8H
+
+permissions_boundary: null
+
+aws_managed_policies:
+  - AWSNetworkManagerFullAccess
+  - AmazonRoute53FullAccess
+  - AmazonVPCCrossAccountNetworkInterfaceOperations
+  - NetworkAdministrator
+
+inline_policy: null
+

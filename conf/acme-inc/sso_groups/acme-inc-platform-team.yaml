@@ -1,0 +1,6 @@
+sso_group_name: 
+  acme-inc-platform-team
+
+description:
+  Members of this group have read-only rights as well as DeveloperAccess rights to 
+  Workloads, Sandbox, and IndividualBusinessUsers OU accounts.
