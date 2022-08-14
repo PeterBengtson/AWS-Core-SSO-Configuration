@@ -71,7 +71,7 @@ You can then deploy your groups, permission sets, and account assignments like s
 $ ./sync-groups acme-inc
 
 ====================================================================================================
-    conf/acme-inc/sso_groups/sunstone-account-administration.yaml:
+    conf/acme-inc/sso_groups/acme-inc-account-administration.yaml:
 ----------------------------------------------------------------------------------------------------
 
 The SSO group acme-inc-account-administration already exists.
