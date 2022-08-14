@@ -120,7 +120,7 @@ to cover configuration of Control Tower accounts not covered by AFT. However, ne
 Tower is required.
 
 You may also want to take a look at https://github.com/PeterBengtson/AFT-SSO-account-configuration,
-which is an AFT addon customisation to allow SSO Groups and SSO Permission Sets to be assigned
+which is an AFT addon customisation to allow SSO Groups, SSO Users and SSO Permission Sets to be assigned
 declaratively for all Control Tower accounts. It can be used in conjunction with this utility.
 
 
