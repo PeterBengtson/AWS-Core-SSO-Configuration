@@ -1,7 +1,7 @@
 # AWS Core SSO Configuration
 
 Utility to manage AWS SSO Permission Sets, SSO Groups, and their assignments to AWS
-accounts from declarative YAML configuration files.
+accounts from declarative YAML configuration files. Control Tower is not required.
 
 This utility allows you to define groups like this:
 ```yaml
