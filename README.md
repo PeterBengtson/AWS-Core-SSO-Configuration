@@ -145,5 +145,5 @@ $ ./sync-accounts looney-tunes
 ```
 
 This allows you to manage multiple installations in the same repository. You might also want to
-modify .gitignore to allow your new directory from being committed to version control, as all
+modify `.gitignore` to allow your new directory from being committed to version control, as all
 subdirectories under `conf` except `acme-inc`are excluded by default.
