@@ -139,9 +139,9 @@ and tailor its files to your needs. Let's say you create a directory named `loon
 deploy it by running one or all of the following, the first time probably in the order given:
 
 ```console
-$ ./sync-groups looney-tunes
-$ ./sync-permission-sets looney-tunes
-$ ./sync-accounts looney-tunes
+./sync-groups looney-tunes
+./sync-permission-sets looney-tunes
+./sync-accounts looney-tunes
 ```
 
 This allows you to manage multiple installations in the same repository. You might also want to
