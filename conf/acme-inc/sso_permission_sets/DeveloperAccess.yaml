@@ -2,10 +2,14 @@ permission_set_name:
   DeveloperAccess
   
 description: 
-  A permission set for builders/developers. It includes read-only 
-  permissions for almost everything a developer would need, plus mutation rights for 
-  things that AWS Copilot might deploy or access. Developers are regionally 
-  restricted to eu-north-1, Stockholm.
+  A permission set for application Builders/Developers. It includes read-only 
+  permissions for everything a developer needs, plus mutation rights for 
+  AWS Copilot and general application development. The rights are further 
+  restricted by Service Control Policies (SCPs) that protect the Foundational 
+  configuration. This permission set will need to be updated as developer 
+  needs change; any changes here should also be reflected in the Boundary 
+  Permissions used, such as developer-permission-boundary-policy. Developers 
+  are regionally restricted to eu-north-1, Stockholm.
 
 session_duration: PT8H
 
