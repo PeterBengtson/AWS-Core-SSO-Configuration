@@ -71,7 +71,7 @@ You can then deploy your groups, permission sets, and account assignments like s
 $ ./sync-groups acme-inc
 
 ====================================================================================================
-    conf/acme-inc/sso_groups/sunstone-account-administration.yaml:
+    conf/acme-inc/sso_groups/acme-inc-account-administration.yaml:
 ----------------------------------------------------------------------------------------------------
 
 The SSO group acme-inc-account-administration already exists.
@@ -120,7 +120,7 @@ to cover configuration of Control Tower accounts not covered by AFT. However, ne
 Tower is required.
 
 You may also want to take a look at https://github.com/PeterBengtson/AFT-SSO-account-configuration,
-which is an AFT addon customisation to allow SSO Groups and SSO Permission Sets to be assigned
+which is an AFT addon customisation to allow SSO Groups, SSO Users and SSO Permission Sets to be assigned
 declaratively for all Control Tower accounts. It can be used in conjunction with this utility.
 
 
@@ -139,11 +139,11 @@ and tailor its files to your needs. Let's say you create a directory named `loon
 deploy it by running one or all of the following, the first time probably in the order given:
 
 ```console
-$ ./sync-groups looney-tunes
-$ ./sync-permission-sets looney-tunes
-$ ./sync-accounts looney-tunes
+./sync-groups looney-tunes
+./sync-permission-sets looney-tunes
+./sync-accounts looney-tunes
 ```
 
 This allows you to manage multiple installations in the same repository. You might also want to
-modify .gitignore to allow your new directory from being committed to version control, as all
+modify `.gitignore` to allow your new directory to be committed to version control, as all
 subdirectories under `conf` except `acme-inc`are excluded by default.
