@@ -9,3 +9,6 @@ sso_groups:
     - AWSPowerUserAccess
   AWSSecurityAuditors:
     - AWSReadOnlyAccess
+
+  acme-inc-cloud-administration:
+    - AWSAdministratorAccess

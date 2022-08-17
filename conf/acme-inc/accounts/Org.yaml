@@ -12,6 +12,8 @@ sso_groups:
   AWSAccountFactory:
     - AWSServiceCatalogEndUserAccess
 
+  acme-inc-cloud-administration:
+    - AWSAdministratorAccess
   acme-inc-account-administration:
     - AWSServiceCatalogAdminFullAccess
   acme-inc-cost-management:
