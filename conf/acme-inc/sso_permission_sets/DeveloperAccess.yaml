@@ -57,6 +57,7 @@ inline_policy:
             Action:
                 - acm:*
                 - apigateway:*
+                - apigatewayv2:*
                 - application-autoscaling:*
                 - appmesh:*
                 - autoscaling:*
