@@ -106,8 +106,9 @@ Keeping AWSControlTowerAdmins with AWSAdministratorAccess
 Keeping AWSSecurityAuditPowerUsers with AWSPowerUserAccess
 Keeping AWSSecurityAuditors with AWSReadOnlyAccess
 Keeping AWSServiceCatalogAdmins with AWSServiceCatalogAdminFullAccess
-Keeping sunstone-account-administration with AWSServiceCatalogAdminFullAccess
-Keeping sunstone-cost-management with BillingAccess
+Keeping acme-inc-cloud-administration with AWSAdministratorAccess
+Keeping acme-inc-account-administration with AWSServiceCatalogAdminFullAccess
+Keeping acme-inc-cost-management with BillingAccess
 ```
 
 
