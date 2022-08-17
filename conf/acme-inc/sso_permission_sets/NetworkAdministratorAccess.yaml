@@ -3,11 +3,13 @@ permission_set_name:
   
 description: 
   Grants full access permissions to AWS services and actions required to set up and 
-  configure AWS network resources, including full access to Route53.
+  configure AWS network resources, including full access to Route53. The rights are 
+  further restricted by Service Control Policies (SCPs) that protect the Foundational 
+  configuration. 
 
 session_duration: PT8H
 
-permissions_boundary: null
+permissions_boundary: network-administrator-permission-boundary-policy
 
 aws_managed_policies:
   - AWSNetworkManagerFullAccess
