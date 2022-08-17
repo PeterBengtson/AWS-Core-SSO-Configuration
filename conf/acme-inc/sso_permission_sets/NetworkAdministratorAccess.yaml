@@ -17,5 +17,21 @@ aws_managed_policies:
   - AmazonVPCCrossAccountNetworkInterfaceOperations
   - NetworkAdministrator
 
-inline_policy: null
+inline_policy:
+    Version: '2012-10-17'
+    Statement:
+        - 
+            Effect: Allow
+            Resource: "*"
+            Action:
+                - access-analyzer:*
+                - aws-portal:ViewBilling
+                - budgets:ViewBudget
+                - ce:Get*
+                - ce:List*
+                - cur:Describe*
+                - health:Describe*
+                - iam:*
+                - support:*
+                - sts:AssumeRole
 

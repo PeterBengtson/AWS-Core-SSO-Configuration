@@ -38,14 +38,6 @@ inline_policy:
                 - route53:*
                 - route53domains:*
                 - support:*
-        - 
-            Sid: AllowStsInStockholm
-            Effect: Allow
-            Resource: "*"
-            Condition:
-                StringEquals:
-                    aws:RequestedRegion: eu-north-1
-            Action:
                 - sts:AssumeRole
         - 
             Sid: AllowLocalServicesInStockholm
