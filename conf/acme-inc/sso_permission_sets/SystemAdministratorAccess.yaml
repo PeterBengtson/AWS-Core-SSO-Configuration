@@ -1,0 +1,32 @@
+permission_set_name: NetworkAdministratorAccess
+
+description:
+  Provides full access to AWS services and resources, but does not allow management
+  of IAM Users and IAM Groups. The rights are further restricted by Service Control 
+  Policies (SCPs) that protect the Foundational configuration.
+
+session_duration: PT8H
+
+permissions_boundary: system-administrator-permission-boundary-policy
+
+aws_managed_policies: null
+
+inline_policy:
+  Version: "2012-10-17"
+  Statement:
+    - 
+      Effect: Allow
+      NotAction:
+        - iam:*
+        - organizations:*
+        - account:*
+      Resource: "*"
+    - 
+      Effect: Allow
+      Action:
+        - iam:CreateServiceLinkedRole
+        - iam:DeleteServiceLinkedRole
+        - iam:ListRoles
+        - organizations:DescribeOrganization
+        - account:ListRegions
+      Resource: "*"

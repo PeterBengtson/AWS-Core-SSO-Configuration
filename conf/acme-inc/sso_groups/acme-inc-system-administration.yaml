@@ -1,0 +1,6 @@
+sso_group_name: 
+  acme-inc-network-administration
+  
+description:
+  Members of this group have full access to AWS services and resources, 
+  but cannot manage IAM Users and IAM Groups.
