@@ -14,3 +14,7 @@ sso_groups:
 
   acme-inc-cloud-administration:
     - AWSAdministratorAccess
+    - AWSReadOnlyAccess
+  acme-inc-security-administration:
+    - SecurityAdministratorAccess
+    - AWSReadOnlyAccess
