@@ -1,4 +1,4 @@
-permission_set_name: NetworkAdministratorAccess
+permission_set_name: SystemAdministratorAccess
 
 description:
   Provides full access to AWS services and resources, but does not allow management
