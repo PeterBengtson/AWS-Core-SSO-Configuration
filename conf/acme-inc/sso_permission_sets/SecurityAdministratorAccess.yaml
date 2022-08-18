@@ -1,4 +1,4 @@
-permission_set_name: SystemAdministratorAccess
+permission_set_name: SecurityAdministratorAccess
 
 description:
   Provides full access to AWS services and resources, but does not allow management
@@ -7,7 +7,7 @@ description:
 
 session_duration: PT8H
 
-permissions_boundary: system-administrator-permission-boundary-policy
+permissions_boundary: security-administrator-permission-boundary-policy
 
 aws_managed_policies: null
 
