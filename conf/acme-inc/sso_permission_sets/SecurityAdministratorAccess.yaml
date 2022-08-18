@@ -9,7 +9,7 @@ session_duration: PT8H
 
 permissions_boundary: security-administrator-permission-boundary-policy
 
-aws_managed_policies: null
+aws_managed_policies: []
 
 inline_policy:
   Version: "2012-10-17"
