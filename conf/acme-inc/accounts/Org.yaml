@@ -1,6 +1,18 @@
 account_id: "333333333333"
 
 sso_groups:
+  acme-inc-cloud-administration:
+    - AWSAdministratorAccess
+    - AWSReadOnlyAccess
+  acme-inc-security-administration:
+    - SecurityAdministratorAccess
+    - AWSReadOnlyAccess
+
+  acme-inc-account-administration:
+    - AWSServiceCatalogAdminFullAccess
+  acme-inc-cost-management:
+    - BillingAccess
+
   AWSControlTowerAdmins:
     - AWSAdministratorAccess
   AWSSecurityAuditPowerUsers:
@@ -12,14 +24,3 @@ sso_groups:
   AWSAccountFactory:
     - AWSServiceCatalogEndUserAccess
 
-  acme-inc-cloud-administration:
-    - AWSAdministratorAccess
-    - AWSReadOnlyAccess
-  acme-inc-security-administration:
-    - SecurityAdministratorAccess
-    - AWSReadOnlyAccess
-    
-  acme-inc-account-administration:
-    - AWSServiceCatalogAdminFullAccess
-  acme-inc-cost-management:
-    - BillingAccess

@@ -1,6 +1,13 @@
 account_id: "222222222222"
 
 sso_groups:
+  acme-inc-cloud-administration:
+    - AWSAdministratorAccess
+    - AWSReadOnlyAccess
+  acme-inc-security-administration:
+    - SecurityAdministratorAccess
+    - AWSReadOnlyAccess
+
   AWSControlTowerAdmins:
     - AWSAdministratorAccess
   AWSLogArchiveAdmins:
@@ -12,9 +19,3 @@ sso_groups:
   AWSSecurityAuditors:
     - AWSReadOnlyAccess
 
-  acme-inc-cloud-administration:
-    - AWSAdministratorAccess
-    - AWSReadOnlyAccess
-  acme-inc-security-administration:
-    - SecurityAdministratorAccess
-    - AWSReadOnlyAccess
