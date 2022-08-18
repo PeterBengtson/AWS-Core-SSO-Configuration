@@ -1,15 +1,14 @@
-permission_set_name: 
-  DeveloperAccess
-  
-description: 
-  A permission set for application Builders/Developers. It includes read-only 
-  permissions for everything a developer needs, plus mutation rights for 
-  AWS Copilot and general application development. The rights are further 
-  restricted by Service Control Policies (SCPs) that protect the Foundational 
-  configuration. This permission set will need to be updated as developer 
-  needs change; any changes here should also be reflected in the Boundary 
-  Permissions used, such as developer-permission-boundary-policy. Developers 
-  are regionally restricted to eu-north-1, Stockholm.
+permission_set_name: DeveloperAccess
+
+description:
+    A permission set for application Builders/Developers. It includes read-only
+    permissions for everything a developer needs, plus mutation rights for
+    AWS Copilot and general application development. The rights are further
+    restricted by Service Control Policies (SCPs) that protect the Foundational
+    configuration. This permission set will need to be updated as developer
+    needs change; any changes here should also be reflected in the Boundary
+    Permissions used, such as developer-permission-boundary-policy. Developers
+    are regionally restricted to eu-north-1, Stockholm.
 
 session_duration: PT8H
 
@@ -19,85 +18,123 @@ aws_managed_policies:
     - ViewOnlyAccess
 
 inline_policy:
-    Version: '2012-10-17'
+    Version: "2012-10-17"
     Statement:
         - 
-            Sid: AllowGlobalServices
-            Effect: Allow
-            Resource: "*"
-            Action:
-                - access-analyzer:*
-                - aws-portal:ViewBilling
-                - budgets:ViewBudget
-                - ce:Get*
-                - ce:List*
-                - cloudfront:*
-                - cur:Describe*
-                - health:Describe*
-                - iam:*
-                - route53:*
-                - route53domains:*
-                - support:*
-                - sts:AssumeRole
+          Sid: AllowGlobalServices
+          Effect: Allow
+          Resource: "*"
+          Action:
+              - access-analyzer:*
+              - aws-portal:ViewBilling
+              - budgets:ViewBudget
+              - ce:Get*
+              - ce:List*
+              - cloudfront:*
+              - cur:Describe*
+              - health:Describe*
+              - iam:*
+              - route53:*
+              - route53domains:*
+              - support:*
+              - sts:AssumeRole
         - 
-            Sid: AllowLocalServicesInStockholm
-            Effect: Allow
-            Resource: "*"
-            Condition:
-                StringEquals:
-                    aws:RequestedRegion: eu-north-1
-            Action:
-                - acm:*
-                - apigateway:*
-                - apigatewayv2:*
-                - application-autoscaling:*
-                - appmesh:*
-                - autoscaling:*
-                - cloudformation:*
-                - cloudtrail:*
-                - cloudwatch:*
-                - codebuild:*
-                - codecommit:*
-                - codedeploy:*
-                - codepipeline:*
-                - codestar:*
-                - config:*
-                - datapipeline:*
-                - dax:*
-                - ds:*
-                - dynamodb:*
-                - ec2:*
-                - ec2messages:*
-                - ecr:*
-                - ecs:*
-                - elasticache:*
-                - elasticbeanstalk:*
-                - elasticfilesystem:*
-                - elasticloadbalancing:*
-                - events:*
-                - firehose:*
-                - fsx:*
-                - glacier:*
-                - inspector:*
-                - kinesis:*
-                - kms:*
-                - lambda:*
-                - logs:*
-                - organizations:Describe*
-                - organizations:List*
-                - outposts:*
-                - pi:*
-                - rds:*
-                - resource-groups:*
-                - s3-object-lambda:*
-                - s3:*
-                - secretsmanager:*
-                - servicediscovery:*
-                - sns:*
-                - sqs:*
-                - ssm:*
-                - ssmmessages:*
-                - states:*
-                - tag:*
-                - xray:*
-
+          Sid: AllowLocalServicesInStockholm
+          Effect: Allow
+          Resource: "*"
+          Condition:
+              StringEquals:
+                  aws:RequestedRegion: eu-north-1
+          Action:
+              - acm:*
+              - apigateway:*
+              - apigatewayv2:*
+              - application-autoscaling:*
+              - appmesh:*
+              - autoscaling:*
+              - cloudformation:*
+              - cloudtrail:*
+              - cloudwatch:*
+              - codebuild:*
+              - codecommit:*
+              - codedeploy:*
+              - codepipeline:*
+              - codestar:*
+              - config:*
+              - datapipeline:*
+              - dax:*
+              - ds:*
+              - dynamodb:*
+              - ec2:*
+              - ec2messages:*
+              - ecr:*
+              - ecs:*
+              - elasticache:*
+              - elasticbeanstalk:*
+              - elasticfilesystem:*
+              - elasticloadbalancing:*
+              - events:*
+              - firehose:*
+              - fsx:*
+              - glacier:*
+              - inspector:*
+              - kinesis:*
+              - kms:*
+              - lambda:*
+              - logs:*
+              - organizations:Describe*
+              - organizations:List*
+              - outposts:*
+              - pi:*
+              - rds:*
+              - resource-groups:*
+              - s3-object-lambda:*
+              - s3:*
+              - secretsmanager:*
+              - servicediscovery:*
+              - sns:*
+              - sqs:*
+              - ssm:*
+              - ssmmessages:*
+              - states:*
+              - tag:*
+              - xray:*
+        - 
+          Sid: DenyDeeperNetworkMutation
+          Effect: Deny
+          Resource: "*"
+          Action:
+              - ec2:AcceptTransitGateway*
+              - ec2:AcceptVpcPeeringConnection
+              - ec2:ApplySecurityGroupsToClientVpnTargetNetwork
+              - ec2:AssociateClientVpnTargetNetwork
+              - ec2:AssociateTransitGateway*
+              - ec2:AttachClassicLinkVpc
+              - ec2:AttachVpnGateway
+              - ec2:AuthorizeClientVpnIngress
+              - ec2:CreateClientVpn*
+              - ec2:CreateCustomerGateway
+              - ec2:CreateTransitGateway*
+              - ec2:CreateVpcPeeringConnection
+              - ec2:CreateVpn*
+              - ec2:CreateClientVpn*
+              - ec2:DeleteClientVpn*
+              - ec2:DeleteTransitGateway*
+              - ec2:DeleteVpcPeeringConnection
+              - ec2:DeleteVpn*
+              - ec2:DeregisterTransitGateway*
+              - ec2:DetachVpnGateway
+              - ec2:DisableTransitGateway*
+              - ec2:DisassociateTransitGateway*
+              - ec2:DisassociateTrunkInterface
+              - ec2:EnableTransitGateway*
+              - ec2:ImportClientVpn*
+              - ec2:ModifyTransitGateway*
+              - ec2:ModifyVpcPeering*
+              - ec2:ModifyVpn*
+              - ec2:RegisterTransitGateway*
+              - ec2:RejectTransitGateway*
+              - ec2:RejectVpcPeering*
+              - ec2:ReplaceTransitGatewayRoute
+              - ec2:RevokeClientVpn*
+              - ec2:TerminateClientVpn*
