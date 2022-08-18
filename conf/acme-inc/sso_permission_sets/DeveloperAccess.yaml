@@ -26,6 +26,7 @@ inline_policy:
           Resource: "*"
           Action:
               - access-analyzer:*
+              - account:ListRegions
               - aws-portal:ViewBilling
               - budgets:ViewBudget
               - ce:Get*
