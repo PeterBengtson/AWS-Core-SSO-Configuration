@@ -5,7 +5,6 @@ sso_groups:
     - AWSAdministratorAccess
     - AWSReadOnlyAccess
   acme-inc-security-administration:
-    - SecurityAdministratorAccess
     - AWSReadOnlyAccess
 
   acme-inc-account-administration:
