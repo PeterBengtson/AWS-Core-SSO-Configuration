@@ -50,6 +50,17 @@ inline_policy:
 account_id: "333333333333"
 
 sso_groups:
+  acme-inc-cloud-administration:
+    - AWSAdministratorAccess
+    - AWSReadOnlyAccess
+  acme-inc-security-administration:
+    - AWSReadOnlyAccess
+
+  acme-inc-account-administration:
+    - AWSServiceCatalogAdminFullAccess
+  acme-inc-cost-management:
+    - BillingAccess
+
   AWSControlTowerAdmins:
     - AWSAdministratorAccess
   AWSSecurityAuditPowerUsers:
@@ -61,12 +72,6 @@ sso_groups:
   AWSAccountFactory:
     - AWSServiceCatalogEndUserAccess
 
-  acme-inc-cloud-administration:
-    - AWSAdministratorAccess
-  acme-inc-account-administration:
-    - AWSServiceCatalogAdminFullAccess
-  acme-inc-cost-management:
-    - BillingAccess
 ```
 You can then deploy your groups, permission sets, and account assignments like so:
 ```console
