@@ -142,7 +142,7 @@ declaratively for all Control Tower accounts. It can be used in conjunction with
 
 ## Operation
 
-Clone or branch this repository. Copy the `conf/acme-inc` directory to `conf/your-company-name` 
+Clone or fork this repository. Copy the `conf/acme-inc` directory to `conf/your-company-name` 
 and tailor its files to your needs. Let's say you create a directory named `looney-tunes`. You can then 
 deploy it by running one or all of the following, the first time probably in the order given:
 
