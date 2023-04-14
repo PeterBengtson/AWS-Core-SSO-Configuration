@@ -13,7 +13,7 @@ permissions_boundary: null
 aws_managed_policies:
   - AWSCodeBuildReadOnlyAccess
   - AWSCodeCommitPowerUser
-  - AWSCodePipelineReadOnlyAccess
+  - AWSCodePipeline_ReadOnlyAccess
   - AWSSSOMemberAccountAdministrator
   - AWSStepFunctionsConsoleFullAccess
   - ViewOnlyAccess
