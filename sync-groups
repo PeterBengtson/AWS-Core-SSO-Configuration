@@ -4,10 +4,6 @@ GREEN="\e[32m"
 YELLOW="\e[33m"
 ENDCOLOR="\e[0m"
 
-if [ -v $AWS_ACCESS_KEY_ID ] ; then
-    echo -e "${RED}ERROR: Please set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY_ID and AWS_SESSION_TOKEN from the SSO temporary credentials popup screen.${ENDCOLOR}"
-    exit 1
-fi
 
 if [ -z "$1" ] ; then
     echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
