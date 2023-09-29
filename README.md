@@ -39,7 +39,6 @@ inline_policy:
             Resource: "*"
             Action:
                 - access-analyzer:*
-                - aws-portal:ViewBilling
                 - budgets:ViewBudget
                 <etc>
                 <etc>
@@ -155,3 +154,7 @@ deploy it by running one or all of the following, the first time probably in the
 This allows you to manage multiple installations in the same repository. You might also want to
 modify `.gitignore` to allow your new directory to be committed to version control, as all
 subdirectories under `conf` except `acme-inc`are excluded by default.
+
+You can authenticate by any means you like, including temporary credentials pasted from the SSO
+login screen, or through something like `aws sso login --profile xxxxx`. The named profile, or your
+default profile, must give you admin access to the AWS Organizations administrative account.
