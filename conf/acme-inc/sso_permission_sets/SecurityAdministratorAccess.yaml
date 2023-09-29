@@ -24,9 +24,10 @@ inline_policy:
     - 
       Effect: Allow
       Action:
+        - account:GetAccountInformation
+        - account:ListRegions
         - iam:CreateServiceLinkedRole
         - iam:DeleteServiceLinkedRole
         - iam:ListRoles
         - organizations:DescribeOrganization
-        - account:ListRegions
       Resource: "*"

@@ -26,6 +26,7 @@ inline_policy:
             Action:
                 - access-analyzer:*
                 - account:GetAccountInformation
+                - account:ListRegions
                 - billing:Get*
                 - billing:List*
                 - budgets:ViewBudget
