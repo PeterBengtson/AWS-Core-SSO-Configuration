@@ -23,6 +23,16 @@ fi
 instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
 identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
 
+echo
+if [[ $instance_arn =~ ^arn:aws:sso:::instance/ssoins- && $identity_store_id =~ ^d-[a-zA-Z0-9]+$ ]]; then
+  echo "${GREEN}Using default AWS SSO identity provider${ENDCOLOR}"
+else
+  echo "${GREEN}Using external identity provider${ENDCOLOR}"
+fi
+echo "    ${GREEN}SSO Instance ARN:      ${YELLOW}$instance_arn${ENDCOLOR}"
+echo "    ${GREEN}SSO Identity Store ID: ${YELLOW}$identity_store_id${ENDCOLOR}"
+
+
 get_group_id() {
     local group_id=$(aws identitystore list-groups --identity-store-id $identity_store_id \
                 --filters "[{\"AttributePath\": \"DisplayName\", \"AttributeValue\": \"$1\"}]" \
@@ -30,25 +40,60 @@ get_group_id() {
     echo $group_id
 }
 
+
+create_sso_group() {
+  local sso_group_name=$1
+  local description=$2
+  local group_id=$(get_group_id $sso_group_name)
+
+  if [[ "$group_id" != "None" ]]; then
+    echo "${RED}Group ${YELLOW}$sso_group_name${RED} already exists.${ENDCOLOR}" 
+    return 0
+  fi
+
+  echo "${GREEN}Creating group ${YELLOW}$sso_group_name${GREEN}...${ENDCOLOR}"
+
+  group_id=$(aws identitystore create-group \
+    --identity-store-id $identity_store_id \
+    --display-name $sso_group_name \
+    --description "$description" \
+    --query 'GroupId' \
+    --output text
+  )
+
+  if [ -z "$group_id" ]; then
+    echo "${RED}Error creating group ${YELLOW}$sso_group_name${ENDCOLOR}" >&2
+    return 1
+  fi
+
+  echo "${GREEN}Group ${YELLOW}$sso_group_name${GREEN} created with ID ${YELLOW}$group_id${ENDCOLOR}"
+  
+  return 0
+}
+
+
 for FILE in ${prefix}sso_groups/*.yaml
-do 
-    echo
-    echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
-    echo -e "${YELLOW}    $FILE:${ENDCOLOR}"
-    echo -e "${GREEN}----------------------------------------------------------------------------------------------------${ENDCOLOR}"
-    echo
-    json=$(cat $FILE | yq .)
-    sso_group_name=$(echo $json | jq -r .sso_group_name)
-    description=$(echo $json | jq -r .description)
-    group_id=$(get_group_id $sso_group_name)
-    if [[ "$group_id" == "None" ]] ; then
-        echo -e "${RED}The SSO group ${YELLOW}$sso_group_name${RED} does not exist.${ENDCOLOR}"
-        echo "${RED}Until there is an API for creating SSO Groups, you must create it manually using the following data:${ENDCOLOR}"
-        echo 
-        echo $json | jq  . | yq -y
-    else
-        echo -e ${GREEN}The SSO group ${YELLOW}$sso_group_name${GREEN} exists.${ENDCOLOR}
+do
+  echo
+  echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
+  echo -e "${YELLOW}    $FILE:${ENDCOLOR}"
+  echo -e "${GREEN}----------------------------------------------------------------------------------------------------${ENDCOLOR}"
+  echo
+  
+  json=$(cat $FILE | yq .)
+  sso_group_name=$(echo $json | jq -r .sso_group_name)
+  description=$(echo $json | jq -r .description)
+  
+  group_id=$(get_group_id $sso_group_name)
+
+  if [[ "$group_id" == "None" ]]; then
+    create_sso_group "$sso_group_name" "$description"
+    if [ $? -ne 0 ]; then
+      echo "${RED}Error creating group $sso_group_name${ENDCOLOR}"
     fi
+  else 
+    echo -e ${GREEN}The SSO group ${YELLOW}$sso_group_name${GREEN} exists.${ENDCOLOR}
+  fi
 done
 echo
 

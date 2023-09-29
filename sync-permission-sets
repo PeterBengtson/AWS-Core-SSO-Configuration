@@ -23,6 +23,17 @@ fi
 instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
 identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
 
+
+echo
+if [[ $instance_arn =~ ^arn:aws:sso:::instance/ssoins- && $identity_store_id =~ ^d-[a-zA-Z0-9]+$ ]]; then
+  echo "${GREEN}Using default AWS SSO identity provider${ENDCOLOR}"
+else
+  echo "${GREEN}Using external identity provider${ENDCOLOR}"
+fi
+echo "    ${GREEN}SSO Instance ARN:      ${YELLOW}$instance_arn${ENDCOLOR}"
+echo "    ${GREEN}SSO Identity Store ID: ${YELLOW}$identity_store_id${ENDCOLOR}"
+
+
 get_permission_set_name() {
     local permission_set_name=$(aws sso-admin describe-permission-set --instance-arn $instance_arn --permission-set-arn $1 \
         --query 'PermissionSet.Name' --output text)
@@ -39,6 +50,7 @@ do
     PERMISSION_SET_ARNS[$permission_set_name]="$permission_set_arn"
 done
 
+
 get_permission_set_arn() {
     echo $PERMISSION_SET_ARNS[$1]
 }
@@ -52,6 +64,7 @@ do
     arn=$(echo $policy | jq --raw-output '.Arn')
     AWS_MANAGED_POLICY_ARNS[$name]="$arn"
 done
+
 
 get_aws_managed_policy_arn() {
     echo $AWS_MANAGED_POLICY_ARNS[$1]
@@ -69,6 +82,7 @@ attach_aws_managed_policy() {
     fi
 }
 
+
 detach_aws_managed_policy() {
     local policy_arn=$(get_aws_managed_policy_arn $1)
     if [ -z "$policy_arn" ] ; then
@@ -80,6 +94,7 @@ detach_aws_managed_policy() {
             --managed-policy-arn $policy_arn
     fi
 }
+
 
 for FILE in ${prefix}sso_permission_sets/*.yaml
 do 
