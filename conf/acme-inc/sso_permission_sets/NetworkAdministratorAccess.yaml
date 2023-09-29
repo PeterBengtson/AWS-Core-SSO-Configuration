@@ -25,13 +25,18 @@ inline_policy:
             Resource: "*"
             Action:
                 - access-analyzer:*
-                - aws-portal:ViewBilling
+                - account:GetAccountInformation
+                - billing:Get*
+                - billing:List*
                 - budgets:ViewBudget
+                - ce:Describe*
                 - ce:Get*
                 - ce:List*
                 - cur:Describe*
+                - cur:Get*
+                - freetier:Get*
                 - health:Describe*
                 - iam:*
-                - support:*
                 - sts:AssumeRole
+                - support:*
 

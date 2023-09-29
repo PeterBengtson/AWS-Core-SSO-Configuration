@@ -26,19 +26,24 @@ inline_policy:
           Resource: "*"
           Action:
               - access-analyzer:*
+              - account:GetAccountInformation
               - account:ListRegions
-              - aws-portal:ViewBilling
+              - billing:Get*
+              - billing:List*
               - budgets:ViewBudget
+              - ce:Describe*
               - ce:Get*
               - ce:List*
               - cloudfront:*
               - cur:Describe*
+              - cur:Get*
+              - freetier:Get*
               - health:Describe*
               - iam:*
               - route53:*
               - route53domains:*
-              - support:*
               - sts:AssumeRole
+              - support:*
         - 
           Sid: AllowLocalServicesInStockholm
           Effect: Allow
