@@ -4,16 +4,44 @@ GREEN="\e[32m"
 YELLOW="\e[33m"
 ENDCOLOR="\e[0m"
 
+group_prefix=""
+config_dir=""
+dry_run=false
 
-if [ -z "$1" ] ; then
-    echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
-    exit 1
-else
-    prefix="conf/$1/"
-    if ! [ -d $prefix ] ; then
-        echo -e "${RED}ERROR: The directory $prefix doesn't exist${ENDCOLOR}"
+while (( "$#" )); do
+  case "$1" in
+    --group-prefix)
+      group_prefix="$2"
+      shift 2
+      ;;
+    --config-dir)
+      config_dir="$2"
+      shift 2
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    *)
+      if [ -z "$config_dir" ]; then
+        config_dir="conf/$1/sso_groups"
+      else
+        echo -e "${RED}ERROR: --config-dir and positional argument cannot be used together${ENDCOLOR}"
         exit 1
-    fi
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$config_dir" ] ; then
+    echo -e "${RED}ERROR: Please specify a subdirectory or use --config-dir${ENDCOLOR}"
+    exit 1
+fi
+
+if ! [ -d $config_dir ] ; then
+    echo -e "${RED}ERROR: The directory $config_dir doesn't exist${ENDCOLOR}"
+    exit 1
 fi
 
 instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
@@ -38,7 +66,7 @@ get_group_id() {
 
 
 create_sso_group() {
-  local sso_group_name=$1
+  local sso_group_name=$group_prefix$1
   local description=$2
   local group_id=$(get_group_id $sso_group_name)
 
@@ -47,28 +75,30 @@ create_sso_group() {
     return 0
   fi
 
-  echo "${GREEN}Creating group ${YELLOW}$sso_group_name${GREEN}...${ENDCOLOR}"
+  if $dry_run; then
+    echo "${GREEN}Would create group ${YELLOW}$sso_group_name${GREEN}...${ENDCOLOR}"
+  else
+    echo "${GREEN}Creating group ${YELLOW}$sso_group_name${GREEN}...${ENDCOLOR}"
+    group_id=$(aws identitystore create-group \
+      --identity-store-id $identity_store_id \
+      --display-name $sso_group_name \
+      --description "$description" \
+      --query 'GroupId' \
+      --output text
+    )
 
-  group_id=$(aws identitystore create-group \
-    --identity-store-id $identity_store_id \
-    --display-name $sso_group_name \
-    --description "$description" \
-    --query 'GroupId' \
-    --output text
-  )
+    if [ -z "$group_id" ]; then
+      echo "${RED}Error creating group ${YELLOW}$sso_group_name${ENDCOLOR}" >&2
+      return 1
+    fi
 
-  if [ -z "$group_id" ]; then
-    echo "${RED}Error creating group ${YELLOW}$sso_group_name${ENDCOLOR}" >&2
-    return 1
+    echo "${GREEN}Group ${YELLOW}$sso_group_name${GREEN} created with ID ${YELLOW}$group_id${ENDCOLOR}"
   fi
-
-  echo "${GREEN}Group ${YELLOW}$sso_group_name${GREEN} created with ID ${YELLOW}$group_id${ENDCOLOR}"
-  
   return 0
 }
 
 
-for FILE in ${prefix}sso_groups/*.yaml
+for FILE in ${config_dir}/*.yaml
 do
   echo
   echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
@@ -78,6 +108,7 @@ do
   
   json=$(cat $FILE | yq .)
   sso_group_name=$(echo $json | jq -r .sso_group_name)
+  sso_group_name=$group_prefix$sso_group_name
   description=$(echo $json | jq -r .description)
   
   group_id=$(get_group_id $sso_group_name)
