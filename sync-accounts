@@ -5,16 +5,63 @@ YELLOW="\e[33m"
 ENDCOLOR="\e[0m"
 
 
-if [ -z "$1" ] ; then
-    echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
-    exit 1
-else
-    prefix="conf/$1/"
-    if ! [ -d $prefix ] ; then
-        echo -e "${RED}ERROR: The directory $prefix doesn't exist${ENDCOLOR}"
+group_prefix=""
+config_dir=""
+accounts=""
+dry_run=false
+
+while (( "$#" )); do
+  case "$1" in
+    --group-prefix)
+      group_prefix="$2"
+      shift 2
+      ;;
+    --config-dir)
+      config_dir="$2"
+      shift 2
+      ;;
+    --accounts)
+      accounts="$2"
+      shift 2
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    *)
+      if [ -z "$config_dir" ]; then
+        config_dir="conf/$1/sso_groups"
+      else
+        echo -e "${RED}ERROR: --config-dir and positional argument cannot be used together${ENDCOLOR}"
         exit 1
-    fi
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$config_dir" ] ; then
+    echo -e "${RED}ERROR: Please specify a subdirectory or use --config-dir${ENDCOLOR}"
+    exit 1
 fi
+
+if ! [ -d $config_dir ] ; then
+    echo -e "${RED}ERROR: The directory $config_dir doesn't exist${ENDCOLOR}"
+    exit 1
+fi
+
+
+declare -A ACCOUNTS_MAP=() # Declare an associative array
+
+if [ -n "$accounts" ]; then
+    # Convert the JSON string to a format that can be easily looked up
+    account_ids=$(echo $accounts | jq -r 'to_entries[] | "\(.key)=\(.value.id)"')
+    for account in ${(f)account_ids}; do
+        IFS='=' read -r key value <<< "$account"
+        ACCOUNTS_MAP[$key]=$value
+    done
+fi
+
 
 instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
 identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
@@ -93,7 +140,25 @@ get_account_assignments() {
 }
 
 
-for FILE in ${prefix}accounts/*.yaml
+massage_config_file() {
+    local json=$1
+    local modified_json=$(echo $json | jq --arg prefix "$group_prefix" -cr ' .sso_groups |= with_entries( if .key | startswith("AWS") then . else .key |= ($prefix + .) end ) ')
+    echo $modified_json
+}
+
+
+dereference_account() {
+    local account_id=$1
+    if [[ $account_id =~ '\{(.*)\}' ]]; then
+        local account_name=$match[1]
+        echo ${ACCOUNTS_MAP[$account_name]}
+    else
+        echo $account_id
+    fi
+}
+
+
+for FILE in ${config_dir}/*.yaml
 do 
     echo
     echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
@@ -101,7 +166,11 @@ do
     echo -e "${GREEN}----------------------------------------------------------------------------------------------------${ENDCOLOR}"
     echo
     json=$(cat $FILE | yq .)
+    json=$(massage_config_file $json)
+
     account_id=$(echo $json | jq -r .account_id)
+    account_id=$(dereference_account $account_id)
+
     sso_groups=$(echo $json | jq -c .sso_groups)
 
     echo -e "Account ${YELLOW}$account_id${ENDCOLOR}"
@@ -143,11 +212,16 @@ do
                 echo -e "${RED}ERROR: The SSO Permission Set $1 can't be found. Aborting.${ENDCOLOR}"
                 exit 1
             fi
-            aws sso-admin create-account-assignment --instance-arn $instance_arn \
-              --target-type AWS_ACCOUNT --target-id $account_id \
-              --principal-type GROUP --principal-id $group_id \
-              --permission-set-arn $permission_set_arn
-            echo
+
+            if $dry_run; then
+                echo -e "${GREEN}DRY-RUN: Would have assigned $sso_group_name with $permission_set_name...${ENDCOLOR}"
+            else
+                aws sso-admin create-account-assignment --instance-arn $instance_arn \
+                    --target-type AWS_ACCOUNT --target-id $account_id \
+                    --principal-type GROUP --principal-id $group_id \
+                    --permission-set-arn $permission_set_arn
+                echo
+            fi
         done
     done
 
@@ -175,11 +249,16 @@ do
                 echo -e "${RED}ERROR: The SSO Permission Set $1 can't be found. Aborting.${ENDCOLOR}"
                 exit 1
             fi
-            aws sso-admin delete-account-assignment --instance-arn $instance_arn \
-              --target-type AWS_ACCOUNT --target-id $account_id \
-              --principal-type GROUP --principal-id $group_id \
-              --permission-set-arn $permission_set_arn
-            echo
+
+            if $dry_run; then
+                echo -e "${GREEN}DRY-RUN: Would have deassigned $sso_group_name with $permission_set_name...${ENDCOLOR}"
+            else
+                aws sso-admin delete-account-assignment --instance-arn $instance_arn \
+                    --target-type AWS_ACCOUNT --target-id $account_id \
+                    --principal-type GROUP --principal-id $group_id \
+                    --permission-set-arn $permission_set_arn
+                echo
+            fi
         done
     done
 done

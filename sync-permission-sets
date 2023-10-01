@@ -5,15 +5,39 @@ YELLOW="\e[33m"
 ENDCOLOR="\e[0m"
 
 
-if [ -z "$1" ] ; then
-    echo -e "${RED}ERROR: Please specify a subdirectory${ENDCOLOR}"
-    exit 1
-else
-    prefix="conf/$1/"
-    if ! [ -d $prefix ] ; then
-        echo -e "${RED}ERROR: The directory $prefix doesn't exist${ENDCOLOR}"
+config_dir=""
+dry_run=false
+
+while (( "$#" )); do
+  case "$1" in
+    --config-dir)
+      config_dir="$2"
+      shift 2
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    *)
+      if [ -z "$config_dir" ]; then
+        config_dir="conf/$1/sso_permission_sets"
+      else
+        echo -e "${RED}ERROR: --config-dir and positional argument cannot be used together${ENDCOLOR}"
         exit 1
-    fi
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$config_dir" ] ; then
+    echo -e "${RED}ERROR: Please specify a subdirectory or use --config-dir${ENDCOLOR}"
+    exit 1
+fi
+
+if ! [ -d $config_dir ] ; then
+    echo -e "${RED}ERROR: The directory $config_dir doesn't exist${ENDCOLOR}"
+    exit 1
 fi
 
 instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
@@ -92,7 +116,7 @@ detach_aws_managed_policy() {
 }
 
 
-for FILE in ${prefix}sso_permission_sets/*.yaml
+for FILE in ${config_dir}/*.yaml
 do 
     echo
     echo -e "${GREEN}====================================================================================================${ENDCOLOR}"
@@ -110,73 +134,82 @@ do
     permission_set_arn=$(get_permission_set_arn $permission_set_name)
     if [[ "$permission_set_arn" == "" ]] ; then
         echo -e ${YELLOW}$permission_set_name${ENDCOLOR} does not exist.
-        echo Creating it...
-        permission_set_arn=$(aws sso-admin create-permission-set --instance-arn $instance_arn \
-          --name $permission_set_name --description $description --session-duration $session_duration \
-          --query 'PermissionSet.PermissionSetArn' --output text)
 
-        if [[ ! "$inline_policy" == "null" ]] ; then
-            echo Putting inline policy...
-            aws sso-admin put-inline-policy-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-            --inline-policy $inline_policy
+        if $dry_run; then
+            echo "${GREEN}Would create permission set ${YELLOW}$permission_set_name${GREEN}...${ENDCOLOR}"
+        else
+            echo Creating it...
+            permission_set_arn=$(aws sso-admin create-permission-set --instance-arn $instance_arn \
+            --name $permission_set_name --description $description --session-duration $session_duration \
+            --query 'PermissionSet.PermissionSetArn' --output text)
+
+            if [[ ! "$inline_policy" == "null" ]] ; then
+                echo Putting inline policy...
+                aws sso-admin put-inline-policy-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+                --inline-policy $inline_policy
+            fi
+
+            if [[ ! "$permissions_boundary" == "null" ]] ; then
+                echo Putting permissions boundary...
+                aws sso-admin put-permissions-boundary-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+                --permissions-boundary "{\"CustomerManagedPolicyReference\": {\"Name\": \"$permissions_boundary\"}}"
+            fi
+
+            echo Attaching AWS managed policies...
+            for policy_name in $(echo $aws_managed_policies | jq -rc '.[]')
+            do
+                attach_aws_managed_policy $policy_name $permission_set_arn
+            done
         fi
-
-        if [[ ! "$permissions_boundary" == "null" ]] ; then
-            echo Putting permissions boundary...
-            aws sso-admin put-permissions-boundary-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-            --permissions-boundary "{\"CustomerManagedPolicyReference\": {\"Name\": \"$permissions_boundary\"}}"
-        fi
-
-        echo Attaching AWS managed policies...
-        for policy_name in $(echo $aws_managed_policies | jq -rc '.[]')
-        do
-            attach_aws_managed_policy $policy_name $permission_set_arn
-        done
 
     else
         echo -e ${YELLOW}$permission_set_name${ENDCOLOR} already exists.
-        echo Updating description and session duration...
-        aws sso-admin update-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-          --description $description --session-duration $session_duration
-
-        if [[ "$inline_policy" == "null" ]] ; then
-            echo Deleting any inline policy...
-            aws sso-admin delete-inline-policy-from-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn
+        if $dry_run; then
+            echo "${GREEN}Would update permission set ${YELLOW}$permission_set_name${GREEN}...${ENDCOLOR}"
         else
-            echo Putting inline policy...
-            aws sso-admin put-inline-policy-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-              --inline-policy $inline_policy
+            echo Updating description and session duration...
+            aws sso-admin update-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+            --description $description --session-duration $session_duration
+
+            if [[ "$inline_policy" == "null" ]] ; then
+                echo Deleting any inline policy...
+                aws sso-admin delete-inline-policy-from-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn
+            else
+                echo Putting inline policy...
+                aws sso-admin put-inline-policy-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+                --inline-policy $inline_policy
+            fi
+
+            if [[ ! "$permissions_boundary" == "null" ]] ; then
+                echo Putting permissions boundary...
+                aws sso-admin put-permissions-boundary-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+                --permissions-boundary "{\"CustomerManagedPolicyReference\": {\"Name\": \"$permissions_boundary\"}}"
+            else
+                echo Deleting any permissions boundary...
+                aws sso-admin delete-permissions-boundary-from-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn
+            fi
+
+            echo Aligning AWS managed policies...
+            current_managed_policies=$(aws sso-admin list-managed-policies-in-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+                --query 'AttachedManagedPolicies[].Name' | jq -rc .)
+            policies_to_attach=$(jq -nc --argjson goal "$aws_managed_policies" --argjson current "$current_managed_policies" \
+            '{"goal":$goal, "current":$current} | .goal-.current') 
+            policies_to_detach=$(jq -nc --argjson goal "$aws_managed_policies" --argjson current "$current_managed_policies" \
+            '{"goal":$goal, "current":$current} | .current-.goal') 
+
+            for policy_name in $(echo $policies_to_attach | jq -rc '.[]')
+            do
+                attach_aws_managed_policy $policy_name $permission_set_arn
+            done
+
+            for policy_name in $(echo $policies_to_detach | jq -rc '.[]')
+            do
+                detach_aws_managed_policy $policy_name $permission_set_arn
+            done
+
+            echo Provisioning...
+            aws sso-admin provision-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
+            --target-type ALL_PROVISIONED_ACCOUNTS
         fi
-
-        if [[ ! "$permissions_boundary" == "null" ]] ; then
-            echo Putting permissions boundary...
-            aws sso-admin put-permissions-boundary-to-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-              --permissions-boundary "{\"CustomerManagedPolicyReference\": {\"Name\": \"$permissions_boundary\"}}"
-        else
-            echo Deleting any permissions boundary...
-            aws sso-admin delete-permissions-boundary-from-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn
-        fi
-
-        echo Aligning AWS managed policies...
-        current_managed_policies=$(aws sso-admin list-managed-policies-in-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-             --query 'AttachedManagedPolicies[].Name' | jq -rc .)
-        policies_to_attach=$(jq -nc --argjson goal "$aws_managed_policies" --argjson current "$current_managed_policies" \
-           '{"goal":$goal, "current":$current} | .goal-.current') 
-        policies_to_detach=$(jq -nc --argjson goal "$aws_managed_policies" --argjson current "$current_managed_policies" \
-           '{"goal":$goal, "current":$current} | .current-.goal') 
-
-        for policy_name in $(echo $policies_to_attach | jq -rc '.[]')
-        do
-            attach_aws_managed_policy $policy_name $permission_set_arn
-        done
-
-        for policy_name in $(echo $policies_to_detach | jq -rc '.[]')
-        do
-            detach_aws_managed_policy $policy_name $permission_set_arn
-        done
-
-        echo Provisioning...
-        aws sso-admin provision-permission-set --instance-arn $instance_arn --permission-set-arn $permission_set_arn \
-          --target-type ALL_PROVISIONED_ACCOUNTS
     fi
 done
