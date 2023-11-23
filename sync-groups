@@ -66,7 +66,7 @@ get_group_id() {
 
 
 create_sso_group() {
-  local sso_group_name=$group_prefix$1
+  local sso_group_name=$1
   local description=$2
   local group_id=$(get_group_id $sso_group_name)
 
