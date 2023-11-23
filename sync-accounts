@@ -63,8 +63,8 @@ if [ -n "$accounts" ]; then
 fi
 
 
-instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
-identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
+instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text --no-paginate)
+identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text --no-paginate)
 
 echo
 if [[ $instance_arn =~ ^arn:aws:sso:::instance/ssoins- && $identity_store_id =~ ^d-[a-zA-Z0-9]+$ ]]; then
@@ -79,27 +79,27 @@ echo "    ${GREEN}SSO Identity Store ID: ${YELLOW}$identity_store_id${ENDCOLOR}"
 get_group_id() {
     local group_id=$(aws identitystore list-groups --identity-store-id $identity_store_id \
                 --filters "[{\"AttributePath\": \"DisplayName\", \"AttributeValue\": \"$1\"}]" \
-                --query 'Groups[0].GroupId' --output text)
+                --query 'Groups[0].GroupId' --output text --no-paginate)
     echo $group_id
 }
 
 
 get_group_name() {
     local group_name=$(aws identitystore describe-group --identity-store-id $identity_store_id --group-id $1 \
-                         --query 'DisplayName' --output text)
+                         --query 'DisplayName' --output text --no-paginate)
     echo $group_name
 }
 
 
 get_permission_set_name() {
     local permission_set_name=$(aws sso-admin describe-permission-set --instance-arn $instance_arn --permission-set-arn $1 \
-                                  --query 'PermissionSet.Name' --output text)
+                                  --query 'PermissionSet.Name' --output text --no-paginate)
     echo $permission_set_name
 }
 
 echo
 echo -e ${YELLOW}Retrieving permission sets...${ENDCOLOR}
-permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text)
+permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text --no-paginate)
 # SSO_INSTANCE_PERMISSION_SET_ARNS maps from names to ARNs
 declare -A SSO_INSTANCE_PERMISSION_SET_ARNS=()     
 for permission_set_arn in $(echo $permission_set_arns)

@@ -40,8 +40,8 @@ if ! [ -d $config_dir ] ; then
     exit 1
 fi
 
-instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
-identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
+instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text --no-paginate)
+identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text --no-paginate)
 
 
 echo
@@ -56,13 +56,13 @@ echo "    ${GREEN}SSO Identity Store ID: ${YELLOW}$identity_store_id${ENDCOLOR}"
 
 get_permission_set_name() {
     local permission_set_name=$(aws sso-admin describe-permission-set --instance-arn $instance_arn --permission-set-arn $1 \
-        --query 'PermissionSet.Name' --output text)
+        --query 'PermissionSet.Name' --output text --no-paginate)
     echo $permission_set_name
 }
 
 echo
 echo -e ${YELLOW}Retrieving permission sets...${ENDCOLOR}
-permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text)
+permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text --no-paginate)
 declare -A PERMISSION_SET_ARNS=()
 for permission_set_arn in $(echo $permission_set_arns)
 do
@@ -141,7 +141,7 @@ do
             echo Creating it...
             permission_set_arn=$(aws sso-admin create-permission-set --instance-arn $instance_arn \
             --name $permission_set_name --description $description --session-duration $session_duration \
-            --query 'PermissionSet.PermissionSetArn' --output text)
+            --query 'PermissionSet.PermissionSetArn' --output text --no-paginate)
 
             if [[ ! "$inline_policy" == "null" ]] ; then
                 echo Putting inline policy...

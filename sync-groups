@@ -44,8 +44,8 @@ if ! [ -d $config_dir ] ; then
     exit 1
 fi
 
-instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text)
-identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text)
+instance_arn=$(aws sso-admin list-instances --query 'Instances[0].InstanceArn' --output text --no-paginate)
+identity_store_id=$(aws sso-admin list-instances --query 'Instances[0].IdentityStoreId' --output text --no-paginate)
 
 echo
 if [[ $instance_arn =~ ^arn:aws:sso:::instance/ssoins- && $identity_store_id =~ ^d-[a-zA-Z0-9]+$ ]]; then
@@ -60,7 +60,7 @@ echo "    ${GREEN}SSO Identity Store ID: ${YELLOW}$identity_store_id${ENDCOLOR}"
 get_group_id() {
     local group_id=$(aws identitystore list-groups --identity-store-id $identity_store_id \
                 --filters "[{\"AttributePath\": \"DisplayName\", \"AttributeValue\": \"$1\"}]" \
-                --query 'Groups[0].GroupId' --output text)
+                --query 'Groups[0].GroupId' --output text --no-paginate)
     echo $group_id
 }
 
@@ -84,7 +84,7 @@ create_sso_group() {
       --display-name $sso_group_name \
       --description "$description" \
       --query 'GroupId' \
-      --output text
+      --output text --no-paginate
     )
 
     if [ -z "$group_id" ]; then
