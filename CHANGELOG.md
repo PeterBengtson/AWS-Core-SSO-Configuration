@@ -1,5 +1,8 @@
 # Change Log
 
+## v1.1.3
+    * Added paging to the permission set script.
+
 ## v1.1.2
     * All three scripts now support additional args to run under the Delegat Installer.
 
