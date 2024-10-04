@@ -1,4 +1,5 @@
-#!/bin/zsh -e
+#!/usr/bin/env zsh
+
 RED="\e[31m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -60,9 +61,31 @@ get_permission_set_name() {
     echo $permission_set_name
 }
 
+get_all_permission_sets() {
+    local next_token=""
+    local all_permission_sets=""
+
+    while true; do
+        if [ -z "$next_token" ]; then
+            result=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --output json)
+        else
+            result=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --output json --next-token $next_token)
+        fi
+
+        all_permission_sets="$all_permission_sets $(echo $result | jq -r '.PermissionSets[]')"
+        next_token=$(echo $result | jq -r '.NextToken')
+
+        if [ "$next_token" = "null" ]; then
+            break
+        fi
+    done
+
+    echo $all_permission_sets
+}
+
 echo
 echo -e ${YELLOW}Retrieving permission sets...${ENDCOLOR}
-permission_set_arns=$(aws sso-admin list-permission-sets --instance-arn $instance_arn --query 'PermissionSets[*]' --output text --no-paginate)
+permission_set_arns=$(get_all_permission_sets)
 declare -A PERMISSION_SET_ARNS=()
 for permission_set_arn in $(echo $permission_set_arns)
 do
@@ -75,12 +98,34 @@ get_permission_set_arn() {
     echo $PERMISSION_SET_ARNS[$1]
 }
 
+get_all_aws_managed_policies() {
+    local marker=""
+    local all_policies=""
+
+    while true; do
+        if [ -z "$marker" ]; then
+            result=$(aws iam list-policies --scope AWS --policy-usage-filter PermissionsPolicy --output json)
+        else
+            result=$(aws iam list-policies --scope AWS --policy-usage-filter PermissionsPolicy --output json --marker $marker)
+        fi
+
+        all_policies="$all_policies $(echo $result | jq -c '.Policies[]')"
+        marker=$(echo $result | jq -r '.Marker')
+
+        if [ "$marker" = "null" ]; then
+            break
+        fi
+    done
+
+    echo $all_policies
+}
+
 echo -e "${YELLOW}Retrieving AWS managed policies (this may take a while)...${ENDCOLOR}"
-aws_managed_policy_arns=$(aws iam list-policies --scope AWS --policy-usage-filter PermissionsPolicy --query 'Policies[].{Name: PolicyName, Arn: Arn}')
+aws_managed_policy_arns=$(get_all_aws_managed_policies)
 declare -A AWS_MANAGED_POLICY_ARNS=()
-for policy in $(echo $aws_managed_policy_arns | jq -c '.[]')
+for policy in $(echo $aws_managed_policy_arns)
 do
-    name=$(echo $policy | jq --raw-output '.Name')
+    name=$(echo $policy | jq --raw-output '.PolicyName')
     arn=$(echo $policy | jq --raw-output '.Arn')
     AWS_MANAGED_POLICY_ARNS[$name]="$arn"
 done
